@@ -1,9 +1,6 @@
 {
   "name": "astro-paper-v6",
   "type": "module",
-  "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp"]
-  },
   "version": "6.1.0",
   "engines": {
     "node": ">=22.12.0"
