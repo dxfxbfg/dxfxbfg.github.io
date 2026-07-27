@@ -26,7 +26,7 @@ export default defineAstroPaperConfig({
       enabled: true,
       url: "https://github.com/dxfxbfg/dxfxbfg.github.io/edit/main/",
     },
-    search: false,
+    search: "pagefind",
   },
   socials: [
     { name: "github", url: "https://github.com/dxfxbfg" },
