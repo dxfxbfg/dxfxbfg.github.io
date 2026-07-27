@@ -1,0 +1,215 @@
+---
+// src/components/Compass.astro
+// 导航罗盘——固定在左侧，四方向点指示当前分区
+
+const currentPath = Astro.url.pathname;
+
+// 判断当前所在分区
+const isArticle =
+  currentPath === "/" ||
+  currentPath.startsWith("/posts") ||
+  currentPath.startsWith("/tags") ||
+  currentPath.startsWith("/archives");
+
+const isProject = currentPath.startsWith("/projects");
+
+// 指针旋转角度：北=0deg, 南=180deg, 东=90deg, 西=-90deg
+let needleAngle = 0;
+let activeZone: "north" | "south" | null = null;
+
+if (isArticle) {
+  needleAngle = 0;
+  activeZone = "north";
+} else if (isProject) {
+  needleAngle = 180;
+  activeZone = "south";
+}
+---
+
+<div class="compass-container group">
+  <!-- 罗盘 SVG 环 -->
+  <svg
+    class="compass-ring"
+    viewBox="0 0 100 100"
+    width="100"
+    height="100"
+    aria-label="导航罗盘"
+  >
+    <!-- 外环 -->
+    <circle
+      cx="50" cy="50" r="45"
+      fill="none"
+      stroke="currentColor"
+      class="text-border"
+      stroke-width="0.5"
+      opacity="0.4"
+    />
+
+    <!-- 中心点 -->
+    <circle cx="50" cy="50" r="3" class="fill-muted-foreground/30" />
+
+    <!-- 北方向点（文章） -->
+    <g role="link" tabindex="0" class="compass-dir" data-dir="north">
+      <a href="/">
+        <circle
+          cx="50" cy="9" r="5"
+          class:list={[
+            "transition-all duration-300",
+            isArticle
+              ? "fill-accent stroke-accent"
+              : "fill-none stroke-muted-foreground/40",
+          ]}
+        />
+        {isArticle && (
+          <circle
+            cx="50" cy="9" r="8"
+            fill="none"
+            class="stroke-accent/30 animate-ping"
+            style="animation-duration: 2s;"
+          />
+        )}
+      </a>
+    </g>
+
+    <!-- 南方向点（项目） -->
+    <g role="link" tabindex="0" class="compass-dir" data-dir="south">
+      <a href="/projects">
+        <circle
+          cx="50" cy="91" r="5"
+          class:list={[
+            "transition-all duration-300",
+            isProject
+              ? "fill-accent stroke-accent"
+              : "fill-none stroke-muted-foreground/40",
+          ]}
+        />
+        {isProject && (
+          <circle
+            cx="50" cy="91" r="8"
+            fill="none"
+            class="stroke-accent/30 animate-ping"
+            style="animation-duration: 2s;"
+          />
+        )}
+      </a>
+    </g>
+
+    <!-- 东方向点（预留） -->
+    <g class="compass-dir cursor-default opacity-30" data-dir="east">
+      <title>即将开放</title>
+      <circle cx="91" cy="50" r="4" fill="none" class="stroke-muted-foreground/30" stroke-dasharray="2 2" />
+    </g>
+
+    <!-- 西方向点（预留） -->
+    <g class="compass-dir cursor-default opacity-30" data-dir="west">
+      <title>即将开放</title>
+      <circle cx="9" cy="50" r="4" fill="none" class="stroke-muted-foreground/30" stroke-dasharray="2 2" />
+    </g>
+
+    <!-- 指针 -->
+    {activeZone && (
+      <g
+        class="transition-transform duration-500 ease-out"
+        style={`transform-origin: 50px 50px; transform: rotate(${needleAngle}deg);`}
+      >
+        <line
+          x1="50" y1="50" x2="50" y2="14"
+          stroke="currentColor"
+          class="text-accent"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
+      </g>
+    )}
+  </svg>
+
+  <!-- 文字标签（悬停显示） -->
+  <div class="compass-labels">
+    <span
+      class:list={[
+        "compass-label",
+        isArticle ? "text-accent font-medium" : "text-muted-foreground",
+      ]}
+    >
+      文章
+    </span>
+    <span
+      class:list={[
+        "compass-label",
+        isProject ? "text-accent font-medium" : "text-muted-foreground",
+      ]}
+    >
+      项目
+    </span>
+  </div>
+</div>
+
+<style>
+  .compass-container {
+    position: fixed;
+    left: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .compass-container .compass-ring,
+  .compass-container .compass-dir,
+  .compass-container .compass-dir a {
+    pointer-events: auto;
+  }
+
+  .compass-labels {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .compass-container:hover .compass-labels {
+    opacity: 1;
+  }
+
+  .compass-label {
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    transition: color 0.2s ease;
+  }
+
+  .compass-dir a {
+    display: block;
+    cursor: pointer;
+  }
+
+  .compass-dir a:focus-visible {
+    outline: 2px dashed var(--color-accent);
+    outline-offset: 4px;
+    border-radius: 9999px;
+  }
+
+  @media (max-width: 767px) {
+    .compass-container {
+      left: 16px;
+      bottom: 24px;
+      top: auto;
+      transform: none;
+    }
+
+    .compass-ring {
+      width: 64px;
+      height: 64px;
+    }
+
+    .compass-labels {
+      display: none;
+    }
+  }
+</style>
