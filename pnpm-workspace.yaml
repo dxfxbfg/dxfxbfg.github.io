@@ -3,3 +3,5 @@ packages:
 allowBuilds:
   esbuild: true
   sharp: true
+minimumReleaseAgeExclude:
+  - '@astrojs/markdoc@2.0.5'
