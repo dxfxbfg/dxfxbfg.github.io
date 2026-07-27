@@ -26,6 +26,9 @@ pnpm-debug.log*
 # pagefind
 public/pagefind
 
+# codegraph
+.codegraph/
+
 # pnpm
 .pnpm-store
 
@@ -36,3 +39,17 @@ compose.override.yaml
 .agents/
 .claude/
 AGENTS.md
+.claude/skills/open-knowledge/
+.cursor/skills/open-knowledge/
+.codex/skills/open-knowledge/
+.github/skills/open-knowledge/
+.opencode/skills/open-knowledge/
+.pi/skills/open-knowledge/
+
+# editor / tool config (root-level, not part of the blog source)
+.codex/
+.cursor/
+.ok/
+.okignore
+.pi/
+.opencode/
