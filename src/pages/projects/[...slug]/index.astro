@@ -1,0 +1,86 @@
+---
+// src/pages/projects/[...slug]/index.astro
+import { getCollection, render } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import config from "@/config";
+
+export async function getStaticPaths() {
+  const projects = await getCollection("projects");
+  return projects.map((project) => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+---
+
+<Layout
+  title={`${project.data.name} | ${config.site.title}`}
+  description={project.data.description}
+>
+  <Header />
+  <main id="main-content" class="app-layout pb-4">
+    <!-- 顶部元信息 -->
+    <div class="border-border border-b pb-6 mb-6">
+      <div class="flex items-center gap-3 mb-3">
+        <span
+          class:list={[
+            "rounded-full px-2.5 py-0.5 text-xs font-medium",
+            project.data.status === "active"
+              ? "bg-accent/10 text-accent"
+              : "bg-muted text-muted-foreground",
+          ]}
+        >
+          {project.data.status === "active" ? "进行中" : "已归档"}
+        </span>
+        {project.data.tags.map((tag) => (
+          <span class="text-xs text-muted-foreground">#{tag}</span>
+        ))}
+      </div>
+
+      <h1 class="text-2xl font-bold sm:text-3xl">
+        {project.data.name}
+      </h1>
+
+      <p class="mt-2 text-muted-foreground">
+        {project.data.description}
+      </p>
+
+      <!-- 外部链接 -->
+      <div class="mt-4 flex gap-3">
+        {project.data.url && (
+          <a
+            href={project.data.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-accent/5 hover:border-accent/30"
+          >
+            访问项目
+          </a>
+        )}
+        {project.data.github && (
+          <a
+            href={project.data.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-accent/5 hover:border-accent/30"
+          >
+            GitHub
+          </a>
+        )}
+      </div>
+    </div>
+
+    <!-- 正文 -->
+    <article class="prose prose-neutral dark:prose-invert max-w-none
+      prose-headings:font-semibold prose-a:text-accent
+      prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)">
+      <Content />
+    </article>
+  </main>
+  <Footer />
+</Layout>
