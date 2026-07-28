@@ -35,6 +35,9 @@ public/pagefind
 # docker compose
 compose.override.yaml
 
+# CLAUDE.md project conventions (managed externally, not part of git source)
+CLAUDE.md
+
 # workspace / agent config (not part of the blog)
 .agents/
 .claude/
@@ -53,3 +56,6 @@ AGENTS.md
 .okignore
 .pi/
 .opencode/
+
+# vscode editor config
+.vscode/
