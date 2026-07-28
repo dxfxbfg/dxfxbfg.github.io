@@ -33,7 +33,7 @@ export const GET: APIRoute = async ({ props, url }) => {
   const boldFontPath = getFontPathByWeight(fonts, 700);
 
   if (regularFontPath === undefined || boldFontPath === undefined) {
-    throw new Error("Cannot find the font path.");
+    return new Response(null, { status: 204 }); // skip OG image when fonts unavailable
   }
 
   const [regularData, boldData] = await Promise.all([
