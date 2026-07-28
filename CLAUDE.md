@@ -27,7 +27,7 @@ Astro 6 + AstroPaper v6.1.0 静态博客，部署到 GitHub Pages。样式用 Ta
 - 站点级配置（标题 / 导航 / 社交 / 主题）：`astro-paper.config.ts` + `astro.config.ts`
 
 ## 本项目禁止项
-
+-**禁止跟踪任何规划类文件**
 - **只用 pnpm**，禁止 npm/yarn。新增依赖走 `pnpm add`；CI 用 `pnpm install --frozen-lockfile`，锁文件必须同步提交。
 - **组件是 `.astro`，不是 React/Vue**——禁止引入 React 或任意 UI 框架。
 - **改内容走 content collection**（`src/content/posts`、`src/content/pages`），禁止手写 `src/pages/posts` 路由文件（路由由 collection 自动生成）。
