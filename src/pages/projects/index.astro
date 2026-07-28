@@ -9,101 +9,110 @@ import config from "@/config";
 const projects = await getCollection("projects");
 const sortedProjects = projects
   .map(({ data, id }) => ({ data, id }))
-  .sort((a, b) => new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime());
+  .sort(
+    (a, b) =>
+      new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
+  );
 
-const featuredProjects = sortedProjects.filter((p) => p.data.featured);
-const otherProjects = sortedProjects.filter((p) => !p.data.featured);
+const featuredProjects = sortedProjects.filter(p => p.data.featured);
+const otherProjects = sortedProjects.filter(p => !p.data.featured);
 ---
 
 <Layout title={`项目 | ${config.site.title}`} description="个人项目展示">
   <Header />
   <main id="main-content" class="app-layout pb-4">
     <h1 class="text-2xl font-semibold sm:text-3xl">项目</h1>
-    <p class="mt-2 mb-6 italic text-muted-foreground">
+    <p class="text-muted-foreground mt-2 mb-6 italic">
       这里记录了我做过的一些东西。
     </p>
 
     <!-- 精选项目 -->
-    {featuredProjects.length > 0 && (
-      <section class="mb-8">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {featuredProjects.map((project) => (
-            <a
-              href={`/projects/${project.id}`}
-              class="group rounded-xl border border-border bg-card p-6 transition-all hover:border-accent/50 hover:shadow-sm sm:col-span-2"
-            >
-              <div class="flex items-start justify-between gap-2">
-                <h2 class="text-xl font-semibold group-hover:text-accent">
-                  {project.data.name}
-                </h2>
-                <span
-                  class:list={[
-                    "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                    project.data.status === "active"
-                      ? "bg-accent/10 text-accent"
-                      : "bg-muted text-muted-foreground",
-                  ]}
-                >
-                  {project.data.status === "active" ? "进行中" : "已归档"}
-                </span>
-              </div>
-              <p class="mt-2 text-sm text-muted-foreground line-clamp-2">
-                {project.data.description}
-              </p>
-              {project.data.tags.length > 0 && (
-                <div class="mt-3 flex flex-wrap gap-1.5">
-                  {project.data.tags.map((tag) => (
-                    <span class="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {tag}
-                    </span>
-                  ))}
+    {
+      featuredProjects.length > 0 && (
+        <section class="mb-8">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {featuredProjects.map(project => (
+              <a
+                href={`/projects/${project.id}`}
+                class="group border-border bg-card hover:border-accent/50 rounded-xl border p-6 transition-all hover:shadow-sm sm:col-span-2"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <h2 class="group-hover:text-accent text-xl font-semibold">
+                    {project.data.name}
+                  </h2>
+                  <span
+                    class:list={[
+                      "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                      project.data.status === "active"
+                        ? "bg-accent/10 text-accent"
+                        : "bg-muted text-muted-foreground",
+                    ]}
+                  >
+                    {project.data.status === "active" ? "进行中" : "已归档"}
+                  </span>
                 </div>
-              )}
-            </a>
-          ))}
-        </div>
-      </section>
-    )}
+                <p class="text-muted-foreground mt-2 line-clamp-2 text-sm">
+                  {project.data.description}
+                </p>
+                {project.data.tags.length > 0 && (
+                  <div class="mt-3 flex flex-wrap gap-1.5">
+                    {project.data.tags.map(tag => (
+                      <span class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </a>
+            ))}
+          </div>
+        </section>
+      )
+    }
 
     <!-- 其他项目 -->
-    {otherProjects.length > 0 && (
-      <section>
-        <h2 class="mb-4 text-lg font-medium text-muted-foreground">
-          更多项目
-        </h2>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {otherProjects.map((project) => (
-            <a
-              href={`/projects/${project.id}`}
-              class="group rounded-xl border border-border bg-card p-5 transition-all hover:border-accent/50 hover:shadow-sm"
-            >
-              <div class="flex items-start justify-between gap-2">
-                <h3 class="font-medium group-hover:text-accent">
-                  {project.data.name}
-                </h3>
-                <span
-                  class:list={[
-                    "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                    project.data.status === "active"
-                      ? "bg-accent/10 text-accent"
-                      : "bg-muted text-muted-foreground",
-                  ]}
-                >
-                  {project.data.status === "active" ? "进行中" : "已归档"}
-                </span>
-              </div>
-              <p class="mt-2 text-sm text-muted-foreground line-clamp-2">
-                {project.data.description}
-              </p>
-            </a>
-          ))}
-        </div>
-      </section>
-    )}
+    {
+      otherProjects.length > 0 && (
+        <section>
+          <h2 class="text-muted-foreground mb-4 text-lg font-medium">
+            更多项目
+          </h2>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {otherProjects.map(project => (
+              <a
+                href={`/projects/${project.id}`}
+                class="group border-border bg-card hover:border-accent/50 rounded-xl border p-5 transition-all hover:shadow-sm"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <h3 class="group-hover:text-accent font-medium">
+                    {project.data.name}
+                  </h3>
+                  <span
+                    class:list={[
+                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                      project.data.status === "active"
+                        ? "bg-accent/10 text-accent"
+                        : "bg-muted text-muted-foreground",
+                    ]}
+                  >
+                    {project.data.status === "active" ? "进行中" : "已归档"}
+                  </span>
+                </div>
+                <p class="text-muted-foreground mt-2 line-clamp-2 text-sm">
+                  {project.data.description}
+                </p>
+              </a>
+            ))}
+          </div>
+        </section>
+      )
+    }
 
-    {sortedProjects.length === 0 && (
-      <p class="text-muted-foreground italic">还没有项目。</p>
-    )}
+    {
+      sortedProjects.length === 0 && (
+        <p class="text-muted-foreground italic">还没有项目。</p>
+      )
+    }
   </main>
   <Footer />
 </Layout>

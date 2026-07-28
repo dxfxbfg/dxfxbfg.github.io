@@ -1,10 +1,9 @@
 ---
 // src/components/Compass.astro
-// 导航罗盘——固定在左侧，四方向点指示当前分区
+// 导航罗盘 — 3D 跟随、磁性吸附、呼吸浮动
 
 const currentPath = Astro.url.pathname;
 
-// 判断当前所在分区
 const isArticle =
   currentPath === "/" ||
   currentPath.startsWith("/posts") ||
@@ -13,199 +12,452 @@ const isArticle =
 
 const isProject = currentPath.startsWith("/projects");
 
-// 指针旋转角度：北=0deg, 南=180deg, 东=90deg, 西=-90deg
 let needleAngle = 0;
-let activeZone: "north" | "south" | null = null;
+if (isProject) needleAngle = 180;
 
-if (isArticle) {
-  needleAngle = 0;
-  activeZone = "north";
-} else if (isProject) {
-  needleAngle = 180;
-  activeZone = "south";
-}
+// 刻度数据：主刻度长，次刻度短
+const ticks = Array.from({ length: 36 }, (_, i) => {
+  const angle = i * 10;
+  const isMain = angle % 90 === 0; // N/E/S/W 位置不画（留给方向点）
+  const isSub = angle % 30 === 0;
+  if (isMain) return null;
+  const rad = ((angle - 90) * Math.PI) / 180;
+  const rInner = isSub ? 34 : 37;
+  const rOuter = isSub ? 40 : 42;
+  return {
+    angle,
+    x1: 60 + rInner * Math.cos(rad),
+    y1: 60 + rInner * Math.sin(rad),
+    x2: 60 + rOuter * Math.cos(rad),
+    y2: 60 + rOuter * Math.sin(rad),
+    width: isSub ? 1.2 : 0.6,
+    opacity: isSub ? 0.35 : 0.2,
+  };
+}).filter(Boolean) as {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  width: number;
+  opacity: number;
+}[];
 ---
 
-<div class="compass-container group">
-  <!-- 罗盘 SVG 环 -->
-  <svg
-    class="compass-ring"
-    viewBox="0 0 100 100"
-    width="100"
-    height="100"
-    aria-label="导航罗盘"
-  >
-    <!-- 外环 -->
-    <circle
-      cx="50" cy="50" r="45"
-      fill="none"
-      stroke="currentColor"
-      class="text-border"
-      stroke-width="0.5"
-      opacity="0.4"
-    />
+<div class="compass-wrapper" id="compass">
+  <div class="compass-body">
+    <svg
+      class="compass-svg"
+      viewBox="0 0 120 120"
+      width="120"
+      height="120"
+      overflow="visible"
+      aria-label="导航罗盘"
+    >
+      <defs>
+        <!-- 底盘金属感渐变 -->
+        <radialGradient id="plateGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="currentColor" class="text-accent/[0.03]"
+          ></stop>
+          <stop
+            offset="70%"
+            stop-color="currentColor"
+            class="text-accent/[0.01]"></stop>
+          <stop offset="100%" stop-color="transparent"></stop>
+        </radialGradient>
+        <!-- 方向点发光 -->
+        <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" class="stop-glow-center"></stop>
+          <stop offset="100%" class="stop-glow-edge"></stop>
+        </radialGradient>
+        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
+          <feMerge>
+            <feMergeNode in="blur"></feMergeNode>
+            <feMergeNode in="SourceGraphic"></feMergeNode>
+          </feMerge>
+        </filter>
+      </defs>
 
-    <!-- 中心点 -->
-    <circle cx="50" cy="50" r="3" class="fill-muted-foreground/30" />
+      <!-- 底盘 -->
+      <circle cx="60" cy="60" r="48" fill="url(#plateGrad)"></circle>
 
-    <!-- 北方向点（文章） -->
-    <g role="link" tabindex="0" class="compass-dir" data-dir="north">
-      <a href="/">
-        <circle
-          cx="50" cy="9" r="5"
-          class:list={[
-            "transition-all duration-300",
-            isArticle
-              ? "fill-accent stroke-accent"
-              : "fill-none stroke-muted-foreground/40",
-          ]}
-        />
-        {isArticle && (
-          <circle
-            cx="50" cy="9" r="8"
-            fill="none"
-            class="stroke-accent/30 animate-ping"
-            style="animation-duration: 2s;"
+      <!-- 外环双轨 -->
+      <circle
+        cx="60"
+        cy="60"
+        r="46"
+        fill="none"
+        stroke="currentColor"
+        class="text-border"
+        stroke-width="0.6"
+        opacity="0.45"></circle>
+      <circle
+        cx="60"
+        cy="60"
+        r="43"
+        fill="none"
+        stroke="currentColor"
+        class="text-border"
+        stroke-width="0.3"
+        opacity="0.25"></circle>
+
+      <!-- 刻度 -->
+      {
+        ticks.map(t => (
+          <line
+            x1={t.x1}
+            y1={t.y1}
+            x2={t.x2}
+            y2={t.y2}
+            stroke="currentColor"
+            class="text-muted-foreground"
+            stroke-width={t.width}
+            opacity={t.opacity}
+            stroke-linecap="round"
           />
-        )}
-      </a>
-    </g>
+        ))
+      }
 
-    <!-- 南方向点（项目） -->
-    <g role="link" tabindex="0" class="compass-dir" data-dir="south">
-      <a href="/projects">
-        <circle
-          cx="50" cy="91" r="5"
-          class:list={[
-            "transition-all duration-300",
-            isProject
-              ? "fill-accent stroke-accent"
-              : "fill-none stroke-muted-foreground/40",
-          ]}
-        />
-        {isProject && (
+      <!-- 内环 -->
+      <circle
+        cx="60"
+        cy="60"
+        r="32"
+        fill="none"
+        stroke="currentColor"
+        class="text-border"
+        stroke-width="0.4"
+        opacity="0.2"></circle>
+
+      <!-- 中心宝石 -->
+      <circle cx="60" cy="60" r="3.5" class="fill-muted-foreground/30"></circle>
+      <circle cx="60" cy="60" r="1.8" class="fill-accent/50"></circle>
+
+      <!-- ===== 北 / 文章 ===== -->
+      <g class="compass-pole" data-pole="north">
+        <a href="/" aria-label="文章" class="pole-link">
+          <!-- 大 hit area -->
+          <circle cx="60" cy="16" r="14" fill="transparent" class="pole-hit"
+          ></circle>
+          <!-- 光晕 -->
           <circle
-            cx="50" cy="91" r="8"
-            fill="none"
-            class="stroke-accent/30 animate-ping"
-            style="animation-duration: 2s;"
-          />
-        )}
-      </a>
-    </g>
+            cx="60"
+            cy="16"
+            r={isArticle ? "10" : "0"}
+            fill="currentColor"
+            class="text-accent/10 pole-halo"
+            style="transition: r 0.4s ease;"></circle>
+          <!-- 主点 -->
+          <polygon
+            points="60,8 63.5,17 60,15 56.5,17"
+            class:list={[
+              "transition-colors duration-300",
+              isArticle
+                ? "fill-accent stroke-accent"
+                : "fill-muted-foreground/50 stroke-muted-foreground/40",
+            ]}
+            stroke-width="0.8"></polygon>
+          <!-- 活跃脉冲 -->
+          {
+            isArticle && (
+              <circle
+                cx="60"
+                cy="14"
+                r="6"
+                fill="none"
+                class="stroke-accent/20 animate-ping"
+                style="animation-duration: 2.5s;"
+              />
+            )
+          }
+        </a>
+      </g>
 
-    <!-- 东方向点（预留） -->
-    <g class="compass-dir cursor-default opacity-30" data-dir="east">
-      <title>即将开放</title>
-      <circle cx="91" cy="50" r="4" fill="none" class="stroke-muted-foreground/30" stroke-dasharray="2 2" />
-    </g>
+      <!-- ===== 南 / 项目 ===== -->
+      <g class="compass-pole" data-pole="south">
+        <a href="/projects" aria-label="项目" class="pole-link">
+          <circle cx="60" cy="104" r="14" fill="transparent" class="pole-hit"
+          ></circle>
+          <circle
+            cx="60"
+            cy="104"
+            r={isProject ? "10" : "0"}
+            fill="currentColor"
+            class="text-accent/10 pole-halo"
+            style="transition: r 0.4s ease;"></circle>
+          <polygon
+            points="60,112 63.5,103 60,105 56.5,103"
+            class:list={[
+              "transition-colors duration-300",
+              isProject
+                ? "fill-accent stroke-accent"
+                : "fill-muted-foreground/50 stroke-muted-foreground/40",
+            ]}
+            stroke-width="0.8"></polygon>
+          {
+            isProject && (
+              <circle
+                cx="60"
+                cy="106"
+                r="6"
+                fill="none"
+                class="stroke-accent/20 animate-ping"
+                style="animation-duration: 2.5s;"
+              />
+            )
+          }
+        </a>
+      </g>
 
-    <!-- 西方向点（预留） -->
-    <g class="compass-dir cursor-default opacity-30" data-dir="west">
-      <title>即将开放</title>
-      <circle cx="9" cy="50" r="4" fill="none" class="stroke-muted-foreground/30" stroke-dasharray="2 2" />
-    </g>
+      <!-- ===== 东（预留） ===== -->
+      <g class="compass-pole cursor-default" data-pole="east">
+        <title>即将开放</title>
+        <circle
+          cx="104"
+          cy="60"
+          r="4"
+          fill="none"
+          class="stroke-muted-foreground/25"
+          stroke-dasharray="2 2"></circle>
+        <text
+          x="111"
+          y="62.5"
+          text-anchor="start"
+          font-size="7"
+          class="fill-muted-foreground/30">E</text
+        >
+      </g>
 
-    <!-- 指针 -->
-    {activeZone && (
+      <!-- ===== 西（预留） ===== -->
+      <g class="compass-pole cursor-default" data-pole="west">
+        <title>即将开放</title>
+        <circle
+          cx="16"
+          cy="60"
+          r="4"
+          fill="none"
+          class="stroke-muted-foreground/25"
+          stroke-dasharray="2 2"></circle>
+        <text
+          x="9"
+          y="62.5"
+          text-anchor="end"
+          font-size="7"
+          class="fill-muted-foreground/30">W</text
+        >
+      </g>
+
+      <!-- 指针 -->
       <g
-        class="transition-transform duration-500 ease-out"
-        style={`transform-origin: 50px 50px; transform: rotate(${needleAngle}deg);`}
+        class="needle-group"
+        style={`transform-origin: 60px 60px; transform: rotate(${needleAngle}deg);`}
       >
+        <!-- 尾 -->
+        <polygon points="59,72 61,72 60,60" class="fill-muted-foreground/30"
+        ></polygon>
+        <!-- 杆 -->
         <line
-          x1="50" y1="50" x2="50" y2="14"
+          x1="60"
+          y1="60"
+          x2="60"
+          y2="26"
           stroke="currentColor"
           class="text-accent"
-          stroke-width="1.5"
-          stroke-linecap="round"
-        />
+          stroke-width="1.6"
+          stroke-linecap="round"></line>
+        <!-- 箭头 -->
+        <polygon points="60,22 57,32 63,32" class="fill-accent"></polygon>
+        <!-- 高光 -->
+        <line
+          x1="60.5"
+          y1="60"
+          x2="60.5"
+          y2="28"
+          stroke="white"
+          stroke-width="0.4"
+          opacity="0.3"
+          stroke-linecap="round"></line>
       </g>
-    )}
-  </svg>
 
-  <!-- 文字标签（悬停显示） -->
+      <!-- 中心帽 -->
+      <circle
+        cx="60"
+        cy="60"
+        r="5"
+        fill="none"
+        stroke="currentColor"
+        class="text-accent/20"
+        stroke-width="1"></circle>
+    </svg>
+  </div>
+
+  <!-- 标签 -->
   <div class="compass-labels">
-    <span
-      class:list={[
-        "compass-label",
-        isArticle ? "text-accent font-medium" : "text-muted-foreground",
-      ]}
-    >
+    <a href="/" class:list={["compass-link", isArticle ? "active" : ""]}>
+      <span class="compass-link-dot"></span>
       文章
-    </span>
-    <span
-      class:list={[
-        "compass-label",
-        isProject ? "text-accent font-medium" : "text-muted-foreground",
-      ]}
+    </a>
+    <a
+      href="/projects"
+      class:list={["compass-link", isProject ? "active" : ""]}
     >
+      <span class="compass-link-dot"></span>
       项目
-    </span>
+    </a>
   </div>
 </div>
 
 <style>
-  .compass-container {
+  /* ===== 容器 ===== */
+  .compass-wrapper {
     position: fixed;
-    left: 24px;
+    left: 56px;
     top: 50%;
-    transform: translateY(-50%);
     z-index: 40;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 14px;
     pointer-events: none;
+    /* 3D 透视容器 */
+    perspective: 600px;
+    transform: translateY(-50%);
   }
 
-  .compass-container .compass-ring,
-  .compass-container .compass-dir,
-  .compass-container .compass-dir a {
+  /* ===== 罗盘本体 ===== */
+  .compass-body {
     pointer-events: auto;
+    transition: transform 0.15s ease-out;
+    will-change: transform;
   }
 
-  .compass-labels {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    opacity: 0;
-    transition: opacity 0.2s ease;
+  /* 浮动动画施加在 SVG 上，避免与 3D rotate 冲突 */
+  .compass-svg {
+    filter: drop-shadow(0 3px 10px rgb(0 0 0 / 0.08));
+    transition: filter 0.3s ease;
+    animation: compassFloat 4s ease-in-out infinite;
   }
 
-  .compass-container:hover .compass-labels {
-    opacity: 1;
+  @keyframes compassFloat {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
   }
 
-  .compass-label {
-    font-size: 11px;
-    line-height: 1;
-    letter-spacing: 0.02em;
-    transition: color 0.2s ease;
+  .compass-wrapper:hover .compass-svg {
+    filter: drop-shadow(0 6px 20px rgb(0 0 0 / 0.14));
   }
 
-  .compass-dir a {
+  /* ===== 方向点交互 ===== */
+  .pole-link {
     display: block;
     cursor: pointer;
   }
 
-  .compass-dir a:focus-visible {
-    outline: 2px dashed var(--color-accent);
-    outline-offset: 4px;
-    border-radius: 9999px;
+  .pole-hit {
+    transition: fill 0.25s ease;
   }
 
+  .pole-link:hover .pole-hit {
+    fill: rgb(128 128 128 / 0.07);
+  }
+
+  .pole-link:hover .pole-halo {
+    r: 14 !important;
+  }
+
+  .pole-link:focus-visible {
+    outline: none;
+  }
+  .pole-link:focus-visible .pole-hit {
+    fill: rgb(128 128 128 / 0.1);
+  }
+
+  /* 磁性 hover 时方向点微微放大 */
+  .compass-pole {
+    transition: transform 0.3s ease;
+    transform-origin: 60px 60px;
+  }
+  .compass-pole:has(.pole-link:hover) {
+    transform: scale(1.15);
+  }
+
+  /* ===== 指针 ===== */
+  .needle-group {
+    transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.15));
+  }
+
+  /* ===== 标签 ===== */
+  .compass-labels {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto;
+  }
+
+  .compass-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.03em;
+    color: var(--color-muted-foreground);
+    opacity: 0.65;
+    text-decoration: none;
+    transition:
+      opacity 0.25s ease,
+      color 0.25s ease;
+  }
+
+  .compass-link:hover {
+    opacity: 1;
+  }
+
+  .compass-link.active {
+    opacity: 1;
+    color: var(--color-accent);
+    font-weight: 500;
+  }
+
+  .compass-link-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0.4;
+    transition:
+      opacity 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .compass-link.active .compass-link-dot {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  .compass-link:hover .compass-link-dot {
+    opacity: 1;
+  }
+
+  /* ===== 移动端 ===== */
   @media (max-width: 767px) {
-    .compass-container {
+    .compass-wrapper {
       left: 16px;
-      bottom: 24px;
+      bottom: 20px;
       top: auto;
       transform: none;
     }
 
-    .compass-ring {
-      width: 64px;
-      height: 64px;
+    .compass-svg {
+      width: 72px;
+      height: 72px;
     }
 
     .compass-labels {
@@ -213,3 +465,50 @@ if (isArticle) {
     }
   }
 </style>
+
+<script>
+  // ===== 3D 鼠标跟随倾斜 =====
+  (function () {
+    const compass = document.getElementById("compass");
+    if (!compass) return;
+
+    const body = compass.querySelector(".compass-body") as HTMLElement | null;
+    if (!body) return;
+
+    let ticking = false;
+
+    document.addEventListener("mousemove", e => {
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        const rect = compass.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+
+        const dx = (e.clientX - cx) / window.innerWidth;
+        const dy = (e.clientY - cy) / window.innerHeight;
+
+        // 限制最大倾斜角度
+        const maxRotateX = 12;
+        const maxRotateY = 12;
+        const rotateX = -dy * maxRotateX;
+        const rotateY = dx * maxRotateY;
+
+        // 只设 rotate，不碰 translate —— wrapper 负责居中定位
+        body.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        ticking = false;
+      });
+    });
+
+    // 鼠标离开时缓慢复位
+    compass.addEventListener("mouseleave", () => {
+      body.style.transition = "transform 0.5s ease-out";
+      body.style.transform = "rotateX(0deg) rotateY(0deg)";
+      // 过渡结束后切回快速响应模式
+      setTimeout(() => {
+        body.style.transition = "transform 0.15s ease-out";
+      }, 500);
+    });
+  })();
+</script>

@@ -23,10 +23,14 @@ import markdoc from "@astrojs/markdoc";
 
 export default defineConfig({
   site: config.site.url,
-  integrations: [mdx(), sitemap({
-    filter: page =>
-      config.features?.showArchives !== false || !page.endsWith("/archives/"),
-  }), markdoc()],
+  integrations: [
+    mdx(),
+    sitemap({
+      filter: page =>
+        config.features?.showArchives !== false || !page.endsWith("/archives/"),
+    }),
+    markdoc(),
+  ],
   i18n: {
     locales: ["zh-CN"],
     defaultLocale: "zh-CN",
